@@ -19,19 +19,17 @@ func (c *OpsCache) Get(ctx context.Context, id string) (OpsRecord, bool) {
 		return OpsRecord{}, false
 	default:
 	}
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	item, ok := c.items[id]
 	if !ok {
 		return OpsRecord{}, false
 	}
-	return item.Clone(), true
+	return item, true
 }
 
 func (c *OpsCache) Store(id string, item OpsRecord) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.items[id] = item.Clone()
+	c.items[id] = item
 }
 
 func (c *OpsCache) Drop(id string) {
@@ -41,7 +39,5 @@ func (c *OpsCache) Drop(id string) {
 }
 
 func (c *OpsCache) Size() int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	return len(c.items)
 }
