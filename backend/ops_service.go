@@ -52,7 +52,7 @@ func (s *OpsService) Get(ctx context.Context, id string) (OpsRecord, error) {
 	return s.store.Get(ctx, id)
 }
 func (s *OpsService) Search(ctx context.Context, q OpsQuery) (OpsPage, error) {
-	items, err := s.store.List(context.Background())
+	items, err := s.store.List(ctx)
 	if err != nil {
 		return OpsPage{}, err
 	}
@@ -68,7 +68,11 @@ func (s *OpsService) Search(ctx context.Context, q OpsQuery) (OpsPage, error) {
 	return OpsPage{Items: filtered[start:end], Page: q.Page, PageSize: q.PageSize, Total: len(filtered), HasNext: end < len(filtered)}, nil
 }
 func (s *OpsService) Transition(ctx context.Context, id string, expected int, target OpsStatus, actor string) (OpsRecord, error) {
-	ctx = context.Background()
+	select {
+	case <-ctx.Done():
+		return OpsRecord{}, ctx.Err()
+	default:
+	}
 	record, err := s.store.Get(ctx, id)
 	if err != nil {
 		return OpsRecord{}, err
