@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 )
@@ -18,17 +17,17 @@ func NewRouter(service *CycleService) http.Handler {
 	mux.HandleFunc("GET /api/cells", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, http.StatusOK, service.Cells()) })
 	mux.HandleFunc("POST /api/cells/status", func(w http.ResponseWriter, r *http.Request) {
 		var req statusRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.ID) == "" {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "id and status JSON are required"})
+			return
+		}
+		if strings.TrimSpace(req.ID) == "" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id and status JSON are required"})
 			return
 		}
 		cell, err := service.ChangeStatus(req.ID, req.Status)
-		if errors.Is(err, ErrCellNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
-			return
-		}
 		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 		writeJSON(w, http.StatusOK, cell)
