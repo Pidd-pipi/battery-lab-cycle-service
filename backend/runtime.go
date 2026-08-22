@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -46,10 +45,10 @@ func newEnterpriseServer(address string, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:              address,
 		Handler:           opsEnterpriseMiddleware(requestIDMiddleware(recoveryMiddleware(handler))),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      15 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: 0,
+		ReadTimeout:       0,
+		WriteTimeout:      0,
+		IdleTimeout:       0,
 		MaxHeaderBytes:    1 << 20,
 	}
 }
@@ -58,7 +57,7 @@ func requestIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := r.Header.Get("X-Request-ID")
 		if requestID == "" {
-			requestID = fmt.Sprintf("req-%d", atomic.AddUint64(&requestSequence, 1))
+			requestID = fmt.Sprintf("req-%d", requestSequence)
 		}
 		w.Header().Set("X-Request-ID", requestID)
 		next.ServeHTTP(w, r)
