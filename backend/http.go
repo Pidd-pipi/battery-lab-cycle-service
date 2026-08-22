@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -18,7 +19,7 @@ func NewRouter(service *CycleService) http.Handler {
 	mux.HandleFunc("POST /api/cells/status", func(w http.ResponseWriter, r *http.Request) {
 		var req statusRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "id and status JSON are required"})
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "id and status JSON are required"})
 			return
 		}
 		if strings.TrimSpace(req.ID) == "" {
@@ -27,10 +28,23 @@ func NewRouter(service *CycleService) http.Handler {
 		}
 		cell, err := service.ChangeStatus(req.ID, req.Status)
 		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			writeJSON(w, statusForChangeStatusError(err), map[string]string{"error": err.Error()})
 			return
 		}
 		writeJSON(w, http.StatusOK, cell)
 	})
 	return withStatic(mux)
+}
+
+// statusForChangeStatusError maps a ChangeStatus error to the matching HTTP
+// status code. An unknown cell is a client error (404), an invalid status is a
+// client error (400); anything else falls back to 500.
+func statusForChangeStatusError(err error) int {
+	if errors.Is(err, ErrCellNotFound) {
+		return http.StatusNotFound
+	}
+	if errors.Is(err, ErrCellStatusInvalid) {
+		return http.StatusBadRequest
+	}
+	return http.StatusInternalServerError
 }
