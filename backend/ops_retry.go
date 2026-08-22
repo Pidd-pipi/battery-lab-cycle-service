@@ -25,10 +25,6 @@ func RunWithRetry(ctx context.Context, policy RetryPolicy, fn func() error) erro
 		if lastErr == nil {
 			return nil
 		}
-		switch opsCode(lastErr) {
-		case "not_found", "conflict", "invalid", "transition", "policy":
-			return lastErr
-		}
 		if attempt < attempts {
 			if err := opsDelay(ctx, opsBackoff(attempt)); err != nil {
 				return err

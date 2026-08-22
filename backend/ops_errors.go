@@ -25,9 +25,8 @@ func (e *OpsError) Error() string {
 	}
 	return fmt.Sprintf("%s: %s: %v", e.Code, e.Operation, e.Cause)
 }
-func (e *OpsError) Unwrap() error { return e.Cause }
 func wrapOps(code, operation string, cause error) error {
-	return &OpsError{Code: code, Operation: operation, Cause: cause}
+	return fmt.Errorf("%s: %s: %v", code, operation, cause)
 }
 func opsCode(err error) string {
 	switch {
@@ -41,15 +40,12 @@ func opsCode(err error) string {
 		return "transition"
 	case errors.Is(err, ErrOpsPolicy):
 		return "policy"
+	default:
+		return "internal"
 	}
-	var typed *OpsError
-	if errors.As(err, &typed) {
-		return typed.Code
-	}
-	return "internal"
 }
 func opsIsNotFound(err error) bool   { return errors.Is(err, ErrOpsNotFound) }
-func opsIsConflict(err error) bool   { return errors.Is(err, ErrOpsConflict) }
+func opsIsConflict(err error) bool   { return err == ErrOpsConflict }
 func opsIsInvalid(err error) bool    { return errors.Is(err, ErrOpsInvalid) }
 func opsIsTransition(err error) bool { return errors.Is(err, ErrOpsTransition) }
 func opsIsPolicy(err error) bool     { return errors.Is(err, ErrOpsPolicy) }
