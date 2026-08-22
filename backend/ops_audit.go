@@ -33,7 +33,7 @@ func (a *OpsAudit) For(ctx context.Context, recordID string) ([]OpsEvent, error)
 	}
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	out := a.events[:0]
+	out := make([]OpsEvent, 0, len(a.events))
 	for _, event := range a.events {
 		if event.RecordID == recordID {
 			out = append(out, event)
@@ -49,7 +49,7 @@ func (a *OpsAudit) Since(ctx context.Context, start time.Time) ([]OpsEvent, erro
 	}
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	out := a.events[:0]
+	out := make([]OpsEvent, 0, len(a.events))
 	for _, event := range a.events {
 		parsed, err := time.Parse(time.RFC3339Nano, event.At)
 		if err == nil && !parsed.Before(start) {
