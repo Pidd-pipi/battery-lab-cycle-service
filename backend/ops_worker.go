@@ -6,6 +6,8 @@ import "context"
 func opsBatchWorker(ctx context.Context, jobs <-chan string, results chan<- BatchOutcome, svc *OpsService, target OpsStatus, actor string) {
 	for id := range jobs {
 		_, err := svc.Transition(ctx, id, 0, target, actor)
-		results <- BatchOutcome{ID: id, OK: err == nil, Err: err}
+		if err == nil {
+			results <- BatchOutcome{ID: id, OK: true}
+		}
 	}
 }

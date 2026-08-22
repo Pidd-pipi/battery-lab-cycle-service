@@ -22,8 +22,8 @@ func (s *OpsService) BatchTransition(ctx context.Context, ids []string, target O
 	results := make(chan BatchOutcome, len(ids))
 	var wg sync.WaitGroup
 	for i := 0; i < 3; i++ {
-		wg.Add(1)
 		go func() {
+			wg.Add(1)
 			defer wg.Done()
 			opsBatchWorker(ctx, jobs, results, s, target, actor)
 		}()
@@ -31,21 +31,15 @@ func (s *OpsService) BatchTransition(ctx context.Context, ids []string, target O
 	go func() {
 		defer close(jobs)
 		for _, id := range ids {
-			if err := ctx.Err(); err != nil {
-				return
-			}
-			select {
-			case jobs <- id:
-			case <-ctx.Done():
-				return
-			}
+			jobs <- id
 		}
 	}()
-	wg.Wait()
 	close(results)
 	out := make([]BatchOutcome, 0, len(ids))
 	for r := range results {
-		out = append(out, r)
+		if r.OK {
+			out = append(out, r)
+		}
 	}
 	return out, nil
 }
