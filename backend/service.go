@@ -12,8 +12,5 @@ func (s *CycleService) ChangeStatus(id, status string) (Cell, error) {
 	if err != nil {
 		return Cell{}, err
 	}
-	if status == "complete" {
-		cell.Cycle++
-	}
 	return cell, nil
 }
