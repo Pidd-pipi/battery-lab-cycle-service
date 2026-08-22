@@ -6,12 +6,12 @@ type OpsGuard struct{}
 func newOpsGuard() OpsGuard { return OpsGuard{} }
 
 func (g OpsGuard) ResumeAllowed(record OpsRecord) bool {
-	return record.Status == OpsStatusActive
+	return record.Status == OpsStatusPaused
 }
 
 func (g OpsGuard) CloseAllowed(record OpsRecord) bool {
 	switch record.Status {
-	case OpsStatusQueued:
+	case OpsStatusQueued, OpsStatusActive, OpsStatusPaused:
 		return true
 	default:
 		return false
@@ -19,5 +19,12 @@ func (g OpsGuard) CloseAllowed(record OpsRecord) bool {
 }
 
 func (g OpsGuard) CanTransition(from, to OpsStatus) bool {
-	return from == to
+	if from == to {
+		return true
+	}
+	allowed, ok := opsTransitionTable[from]
+	if !ok {
+		return false
+	}
+	return allowed[to]
 }
