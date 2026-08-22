@@ -20,7 +20,6 @@ func (s *OpsService) Report(ctx context.Context) ([]OpsReportRow, error) {
 		return nil, err
 	}
 	rows := buildReportRows(items)
-	rows = append(rows, rows...)
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Site < rows[j].Site })
-	return rows[:len(rows)-1], nil
+	return rows, nil
 }
