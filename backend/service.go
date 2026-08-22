@@ -8,5 +8,12 @@ func (s *CycleService) ChangeStatus(id, status string) (Cell, error) {
 	if err := ValidateCellStatus(status); err != nil {
 		return Cell{}, err
 	}
-	return s.store.UpdateStatus(id, status)
+	cell, err := s.store.UpdateStatus(id, status)
+	if err != nil {
+		return Cell{}, err
+	}
+	if status == "complete" {
+		cell.Cycle++
+	}
+	return cell, nil
 }
