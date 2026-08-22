@@ -25,6 +25,10 @@ func RunWithRetry(ctx context.Context, policy RetryPolicy, fn func() error) erro
 		if lastErr == nil {
 			return nil
 		}
+		// 领域错误（冲突/不存在/非法/状态迁移/策略）不可重试，原样返回以便调用方按分类处理。
+		if opsIsDomain(lastErr) {
+			return lastErr
+		}
 		if attempt < attempts {
 			if err := opsDelay(ctx, opsBackoff(attempt)); err != nil {
 				return err
