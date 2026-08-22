@@ -9,7 +9,11 @@ type OpsClock struct{ NowFunc func() time.Time }
 
 func newOpsClock() OpsClock { return OpsClock{NowFunc: time.Now} }
 func (c OpsClock) Now() time.Time {
-	return c.NowFunc().UTC()
+	nowFunc := c.NowFunc
+	if nowFunc == nil {
+		nowFunc = time.Now
+	}
+	return nowFunc().UTC()
 }
 func (c OpsClock) Stamp() string { return c.Now().Format(time.RFC3339Nano) }
 func opsContext(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {

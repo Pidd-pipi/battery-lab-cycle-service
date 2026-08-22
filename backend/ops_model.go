@@ -82,8 +82,19 @@ type OpsSnapshot struct {
 
 func (r OpsRecord) Clone() OpsRecord {
 	copy := r
-	copy.Labels = r.Labels
+	copy.Labels = cloneOpsLabels(r.Labels)
 	return copy
+}
+
+// cloneOpsLabels returns a new map with the same entries as src. A nil src
+// yields a non-nil, empty map so callers can safely write to the clone without
+// panicking on "assignment to entry in nil map" or aliasing the original.
+func cloneOpsLabels(src map[string]string) map[string]string {
+	out := make(map[string]string, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	return out
 }
 
 func (r OpsRecord) LabelValue(key string) string { return r.Labels[key] }
@@ -106,6 +117,10 @@ func normalizeOpsRecord(record OpsRecord) OpsRecord {
 	record.ID = strings.ToLower(strings.TrimSpace(record.ID))
 	record.Subject = strings.Join(strings.Fields(record.Subject), " ")
 	record.Owner = strings.TrimSpace(record.Owner)
+	record.Labels = cloneOpsLabels(record.Labels)
+	if record.Revision <= 0 {
+		record.Revision = 1
+	}
 	return record
 }
 
